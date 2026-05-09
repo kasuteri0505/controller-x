@@ -1,0 +1,97 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "deploy.sh",
+      "setup-email.bat",
+      "index.js",
+      "functions/**",
+      "**/node_modules/**",
+      "**/*.bat",
+      "**/*.sh",
+      "index_integrated.html"
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://apis.google.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://api.coingecko.com https://query2.finance.yahoo.com https://widgets.myfxbook.com https://www.myfxbook.com https://fullnode.mainnet.sui.io https://sui-mainnet-rpc.nodereal.io https://rpc.mainnet.sui.io https://cloudflare-eth.com https://eth.llamarpc.com https://rpc.ankr.com https://arb1.arbitrum.io https://arbitrum.llamarpc.com https://mainnet.base.org https://base.llamarpc.com https://mainnet.optimism.io https://polygon-rpc.com https://bsc-dataseed.binance.org https://firestore.googleapis.com https://firebase.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://us-central1-cashflow-ae591.cloudfunctions.net https://api.stripe.com wss://firestore.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://fcmregistrations.googleapis.com https://firebaseinstallations.googleapis.com; frame-src https://cashflow-ae591.firebaseapp.com https://accounts.google.com https://widgets.myfxbook.com https://js.stripe.com https://checkout.stripe.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+          }
+        ]
+      },
+      {
+        "source": "**/*.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.@(png|jpg|jpeg|gif|webp|ico|json)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "**/*.css",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, must-revalidate"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/admin",
+        "destination": "/admin.html"
+      },
+      {
+        "source": "/app",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/app/",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/plataforma",
+        "destination": "/app.html"
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "functions": {
+    "source": "functions"
+  }
+}

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Icon Generator</title></head>
+<body style="font-family:sans-serif;padding:2rem;background:#f5f5f5">
+<h2>CashFlow Labs — Gerador de Ícones PWA</h2>
+<p>Clique nos botões abaixo para baixar os ícones necessários para o PWA.</p>
+<div style="display:flex;gap:1rem;margin:1rem 0;flex-wrap:wrap">
+  <button onclick="generate(192)" style="padding:10px 20px;background:#39ff8a;border:none;border-radius:8px;font-weight:700;cursor:pointer">Baixar icon-192.png</button>
+  <button onclick="generate(512)" style="padding:10px 20px;background:#638eff;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Baixar icon-512.png</button>
+  <button onclick="generate(192);setTimeout(()=>generate(512),300)" style="padding:10px 20px;background:#333;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Baixar Ambos</button>
+</div>
+<canvas id="c" style="display:none"></canvas>
+<div id="preview" style="display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap"></div>
+<script>
+function generate(size) {
+  const canvas = document.getElementById('c');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, size, size);
+  bg.addColorStop(0, '#080c12');
+  bg.addColorStop(1, '#161d2a');
+  ctx.fillStyle = bg;
+  const r = size * 0.18;
+  roundRect(ctx, 0, 0, size, size, r);
+  ctx.fill();
+
+  // Glow effect
+  const glow = ctx.createRadialGradient(size*0.35, size*0.35, 0, size*0.5, size*0.5, size*0.6);
+  glow.addColorStop(0, 'rgba(57,255,138,0.15)');
+  glow.addColorStop(0.5, 'rgba(99,142,255,0.08)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, size, size);
+
+  // Inner card
+  const pad = size * 0.12;
+  const cardGrad = ctx.createLinearGradient(pad, pad, size-pad, size-pad);
+  cardGrad.addColorStop(0, '#4169e1');
+  cardGrad.addColorStop(1, '#39ff8a');
+  ctx.fillStyle = cardGrad;
+  const cr = size * 0.1;
+  roundRect(ctx, pad, pad, size - pad*2, size - pad*2, cr);
+  ctx.fill();
+
+  // Letter C
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `bold ${size*0.5}px Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('C', size/2, size/2 + size*0.02);
+
+  // Download
+  const link = document.createElement('a');
+  link.download = `icon-${size}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  // Preview
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL('image/png');
+  img.style.cssText = `width:${Math.min(size,128)}px;height:${Math.min(size,128)}px;border-radius:${size*0.18*128/size}px;border:2px solid #ddd`;
+  const div = document.getElementById('preview');
+  div.innerHTML = '';
+  div.appendChild(img);
+  const label = document.createElement('div');
+  label.style.cssText = 'font-size:12px;color:#666;margin-top:4px';
+  label.textContent = `icon-${size}.png ✅`;
+  div.appendChild(label);
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+</script>
+</body>
+</html>

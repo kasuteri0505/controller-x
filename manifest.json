@@ -1,0 +1,40 @@
+{
+  "name": "ProfitFlow Labs",
+  "short_name": "ProfitFlow",
+  "description": "Plataforma DeFi & Finanças — pools de liquidez, carteira, finanças pessoais",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080c12",
+  "theme_color": "#080c12",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "pt-BR",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/?tab=dashboard",
+      "description": "Ver dashboard principal"
+    },
+    {
+      "name": "Pools",
+      "url": "/?tab=positions",
+      "description": "Pools de liquidez"
+    }
+  ]
+}

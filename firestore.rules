@@ -1,0 +1,114 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper: check if user is admin ──
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // ── Helper: check if user is authenticated ──
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // ── Helper: check if accessing own data ──
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function protectedUserFields() {
+      return ['role', 'isAdmin', 'plan', 'subscription', 'trialStart', 'trialEnd'];
+    }
+
+    function ownerCanCreateUser() {
+      return request.resource.data.role == null &&
+        request.resource.data.isAdmin == null &&
+        request.resource.data.subscription == null &&
+        (!request.resource.data.keys().hasAny(['plan']) || request.resource.data.plan == 'trial');
+    }
+
+    function ownerCanUpdateUser() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserFields());
+    }
+
+    // ════════════════════════════════════════════════
+    // USERS — each user reads/writes their own doc
+    // Admins can read/write any user doc
+    // ════════════════════════════════════════════════
+    match /users/{userId} {
+      allow read:  if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && ownerCanCreateUser()) || isAdmin();
+      allow update: if (isOwner(userId) && ownerCanUpdateUser()) || isAdmin();
+      allow delete: if isAdmin();
+
+      // Sub-collections (positions, options, export_logs, etc.)
+      match /{subcollection}/{docId} {
+        allow read:  if isOwner(userId) || isAdmin();
+        allow write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // ════════════════════════════════════════════════
+    // PLATFORM — admin config (modules, settings, etc.)
+    // Everyone can READ (to check module visibility)
+    // Only admins can WRITE
+    // ════════════════════════════════════════════════
+    match /platform/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // POSTS — everyone reads published posts
+    // Only admins can create/edit/delete
+    // ════════════════════════════════════════════════
+    match /posts/{postId} {
+      allow read:  if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // PLATFORM NOTIFICATIONS — everyone reads
+    // Only admins can write
+    // ════════════════════════════════════════════════
+    match /platform_notifications/{notifId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // NEWSLETTER — anyone can subscribe (write)
+    // Only admins can read the list
+    // ════════════════════════════════════════════════
+    match /newsletter_subscribers/{docId} {
+      allow create: if true;  // Anyone can subscribe
+      allow read:   if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // ADMIN EMAILS — only admins
+    // ════════════════════════════════════════════════
+    match /admin_emails/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // PUSH JOBS — admin writes, Cloud Function reads
+    // ════════════════════════════════════════════════
+    match /push_jobs/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ════════════════════════════════════════════════
+    // PUSH HISTORY — admin reads/writes
+    // ════════════════════════════════════════════════
+    match /push_history/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+  }
+}

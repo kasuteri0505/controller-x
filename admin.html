@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — ProfitFlow Labs</title>
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  AUTH SCREEN                                                   -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">C</div>
+      <div>
+        <div class="auth-logo-text">ProfitFlow Labs</div>
+        <div class="auth-logo-sub">admin panel</div>
+      </div>
+    </div>
+    <div class="badge-admin">🛡️ ACESSO RESTRITO — ADMIN</div>
+    <div class="auth-title">Entrar como Admin</div>
+    <div class="auth-sub">Use suas credenciais de administrador para acessar o painel.</div>
+    <div class="field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="admin@profitflowlabs.io" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="err-msg" id="login-err"></div>
+    <button class="btn btn-green" id="login-btn" onclick="doLogin()" style="width:100%;margin-top:8px;justify-content:center;height:42px">
+      Acessar Painel
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  APP SHELL                                                     -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">C</div>
+      <div>
+        <div class="sidebar-logo-text">ProfitFlow Labs</div>
+        <div class="sidebar-logo-sub">admin ↗</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">Geral</div>
+        <button class="nav-item active" data-panel="dashboard" onclick="switchPanel('dashboard')">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button class="nav-item" data-panel="analytics" onclick="switchPanel('analytics')">
+          <span class="nav-icon">📈</span> Analytics
+        </button>
+      </div>
+
+      <div class="nav-section" style="margin-top:.5rem">
+        <div class="nav-section-label">Usuários</div>
+        <button class="nav-item" data-panel="users" onclick="switchPanel('users')">
+          <span class="nav-icon">👥</span> Usuários
+          <span class="nav-count" id="nav-users-count">—</span>
+        </button>
+        <button class="nav-item" data-panel="subscriptions" onclick="switchPanel('subscriptions')">
+          <span class="nav-icon">💳</span> Assinaturas
+        </button>
+      </div>
+
+      <div class="nav-section" style="margin-top:.5rem">
+        <div class="nav-section-label">Conteúdo</div>
+        <button class="nav-item" data-panel="posts" onclick="switchPanel('posts')">
+          <span class="nav-icon">📰</span> Posts / Artigos
+          <span class="nav-count" id="nav-posts-count">—</span>
+        </button>
+        <button class="nav-item" data-panel="notifications" onclick="switchPanel('notifications')">
+          <span class="nav-icon">🔔</span> Notificações
+        </button>
+        <button class="nav-item" data-panel="push" onclick="switchPanel('push')">
+          <span class="nav-icon">📲</span> Push Notifications
+          <span class="nav-count" id="nav-push-count">—</span>
+        </button>
+      </div>
+
+      <div class="nav-section" style="margin-top:.5rem">
+        <div class="nav-section-label">Sistema</div>
+        <button class="nav-item" data-panel="modules" onclick="switchPanel('modules')">
+          <span class="nav-icon">🧩</span> Módulos
+        </button>
+        <button class="nav-item" data-panel="settings" onclick="switchPanel('settings')">
+          <span class="nav-icon">⚙️</span> Configurações
+        </button>
+        <button class="nav-item" data-panel="logs" onclick="switchPanel('logs')">
+          <span class="nav-icon">📋</span> Logs de Acesso
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">A</div>
+        <div style="flex:1;min-width:0">
+          <div class="sidebar-user-name" id="sidebar-name">Admin</div>
+          <div class="sidebar-user-role">ADMIN</div>
+        </div>
+        <button class="btn-logout" title="Sair" onclick="doLogout()">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn btn-ghost btn-sm" style="display:none" id="mobile-menu" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <button onclick="openQuickSwitch()" style="display:flex;align-items:center;gap:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text3);font-family:var(--font-mono)" title="Navegação rápida (Ctrl+K)">🔍 <kbd style="font-size:9px;background:var(--bg3);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">Ctrl+K</kbd></button>
+        <span id="last-refresh-label" style="font-size:10px;color:var(--text3);font-family:var(--font-mono)"></span>
+      </div>
+      <div class="topbar-right">
+        <a href="index.html" target="_blank" style="font-size:11px;color:var(--text2);text-decoration:none;font-family:var(--font-mono);transition:color .15s" onmouseover="this.style.color='var(--green)'" onmouseout="this.style.color='var(--text2)'">📰 Ver Blog</a>
+        <a href="app.html" target="_blank" style="font-size:11px;color:var(--text2);text-decoration:none;font-family:var(--font-mono);transition:color .15s" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--text2)'">🚀 Ver Plataforma</a>
+        <button class="btn btn-xs btn-ghost" onclick="refreshPanel()" title="Atualizar painel atual" id="refresh-btn">↻ Atualizar</button>
+        <div class="live-dot">LIVE</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono)" id="topbar-date"></div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- ──── DASHBOARD ──── -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stat-grid" id="stats-grid">
+          <div class="stat-card" data-icon="👥">
+            <div class="stat-label">Total Usuários</div>
+            <div class="stat-value blue" id="stat-users">—</div>
+            <div class="stat-delta" id="stat-users-sub">Carregando...</div>
+          </div>
+          <div class="stat-card" data-icon="✅">
+            <div class="stat-label">Ativos últimas 24h</div>
+            <div class="stat-value green" id="stat-active">—</div>
+            <div class="stat-delta" id="stat-active-sub">via lastLogin</div>
+          </div>
+          <div class="stat-card" data-icon="💳">
+            <div class="stat-label">Assinantes Pro</div>
+            <div class="stat-value amber" id="stat-pro">—</div>
+            <div class="stat-delta" id="stat-pro-sub">—</div>
+          </div>
+          <div class="stat-card" data-icon="📰">
+            <div class="stat-label">Posts Publicados</div>
+            <div class="stat-value" id="stat-posts">—</div>
+            <div class="stat-delta" id="stat-posts-sub">—</div>
+          </div>
+          <div class="stat-card" data-icon="💰">
+            <div class="stat-label">Receita Estimada</div>
+            <div class="stat-value green" id="stat-revenue">—</div>
+            <div class="stat-delta" id="stat-revenue-sub">mensal (Pro × R$97)</div>
+          </div>
+          <div class="stat-card" data-icon="🆕">
+            <div class="stat-label">Cadastros Hoje</div>
+            <div class="stat-value blue" id="stat-today">—</div>
+            <div class="stat-delta" id="stat-today-sub">novos usuários</div>
+          </div>
+          <div class="stat-card" data-icon="📩">
+            <div class="stat-label">Newsletter</div>
+            <div class="stat-value" id="stat-newsletter">—</div>
+            <div class="stat-delta">assinantes do blog</div>
+          </div>
+          <div class="stat-card" data-icon="📅">
+            <div class="stat-label">Cadastros esta semana</div>
+            <div class="stat-value" id="stat-week">—</div>
+            <div class="stat-delta" id="stat-week-sub">últimos 7 dias</div>
+          </div>
+        </div>
+
+        <!-- Recent users -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Usuários Recentes</div>
+              <div class="card-sub">Últimos registros na plataforma</div>
+            </div>
+            <button class="btn btn-sm" onclick="switchPanel('users')">Ver todos →</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>E-mail</th>
+                  <th>Plano</th>
+                  <th>Cadastro</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recent-users-tbody">
+                <tr><td colspan="5" class="loading">
+                  <div class="spinner"></div> Carregando...
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent posts -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Posts Recentes</div>
+              <div class="card-sub">Artigos publicados no News</div>
+            </div>
+            <button class="btn btn-green btn-sm" onclick="openPostModal()">+ Novo Post</button>
+          </div>
+          <div id="recent-posts-list">
+            <div class="loading"><div class="spinner"></div> Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──── ANALYTICS ──── -->
+      <div class="panel" id="panel-analytics">
+        <div class="stat-grid">
+          <div class="stat-card" data-icon="📈">
+            <div class="stat-label">Cadastros Hoje</div>
+            <div class="stat-value green" id="an-today">—</div>
+            <div class="stat-delta">dados reais</div>
+          </div>
+          <div class="stat-card" data-icon="🔄">
+            <div class="stat-label">Taxa de Conversão</div>
+            <div class="stat-value blue" id="an-conv">—</div>
+            <div class="stat-delta">free → pro</div>
+          </div>
+          <div class="stat-card" data-icon="📊">
+            <div class="stat-label">Média Diária (30d)</div>
+            <div class="stat-value amber" id="an-avg">—</div>
+            <div class="stat-delta">cadastros/dia</div>
+          </div>
+          <div class="stat-card" data-icon="🌐">
+            <div class="stat-label">Países</div>
+            <div class="stat-value" id="an-countries">—</div>
+            <div class="stat-delta">representados</div>
+          </div>
+          <div class="stat-card" data-icon="📅">
+            <div class="stat-label">Melhor Dia (30d)</div>
+            <div class="stat-value" id="an-best-day" style="font-size:14px">—</div>
+            <div class="stat-delta" id="an-best-day-sub">pico de cadastros</div>
+          </div>
+          <div class="stat-card" data-icon="💸">
+            <div class="stat-label">MRR Estimado</div>
+            <div class="stat-value green" id="an-mrr">—</div>
+            <div class="stat-delta">receita recorrente</div>
+          </div>
+          <div class="stat-card" data-icon="⚡">
+            <div class="stat-label">Trial Ativos</div>
+            <div class="stat-value amber" id="an-trial">—</div>
+            <div class="stat-delta">em período de trial</div>
+          </div>
+          <div class="stat-card" data-icon="📩">
+            <div class="stat-label">Newsletter</div>
+            <div class="stat-value" id="an-newsletter">—</div>
+            <div class="stat-delta">assinantes captados</div>
+          </div>
+        </div>
+
+        <!-- Growth Chart with real data -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Crescimento de Usuários</div>
+              <div class="card-sub" id="growth-subtitle">Carregando dados reais...</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-xs" id="growth-btn-7"  onclick="setGrowthWindow(7)"  >7d</button>
+              <button class="btn btn-xs active" id="growth-btn-30" onclick="setGrowthWindow(30)" style="background:var(--blue);color:#fff;border-color:var(--blue)">30d</button>
+              <button class="btn btn-xs" id="growth-btn-90" onclick="setGrowthWindow(90)" >90d</button>
+            </div>
+          </div>
+          <div id="growth-chart" style="padding:.5rem 0"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1rem">Distribuição de Planos</div>
+            <div id="plan-dist"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1rem">Top Tags de Posts</div>
+            <div id="tag-dist"></div>
+          </div>
+        </div>
+
+        <!-- Cohort table: registrations by week -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Cadastros por Semana</div>
+            <div class="card-sub">Últimas 8 semanas</div>
+          </div>
+          <div id="cohort-table"></div>
+        </div>
+
+        <!-- Top countries -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1rem">Top Países</div>
+            <div id="country-dist"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1rem">Atividade de Admins (30d)</div>
+            <div id="admin-activity"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──── USERS ──── -->
+      <div class="panel" id="panel-users">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Gerenciar Usuários</div>
+            <div class="card-sub" id="users-subtitle">Carregando...</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <div class="search-wrap">
+              <input type="text" id="user-search" placeholder="Buscar usuário..." oninput="filterUsers()">
+            </div>
+            <button class="btn btn-sm" onclick="exportUsersCSV()" title="Exportar CSV">⬇ CSV</button>
+            <button class="btn btn-sm" onclick="refreshPanel()">↻ Atualizar</button>
+            <button class="btn btn-sm" onclick="openBulkModal()">⚡ Em Massa</button>
+            <button class="btn btn-sm btn-ghost" onclick="exportUsersCSV()">📥 Exportar CSV</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuário</th>
+                  <th>E-mail</th>
+                  <th>Plano</th>
+                  <th>Role</th>
+                  <th>Cadastro</th>
+                  <th>Último login</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="7" class="loading"><div class="spinner"></div> Carregando usuários...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" style="padding:1rem 1.25rem">
+            <div class="pagination-info" id="users-pag-info">—</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm" id="pag-prev" onclick="usersPage(-1)">← Anterior</button>
+              <button class="btn btn-sm" id="pag-next" onclick="usersPage(1)">Próxima →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──── SUBSCRIPTIONS ──── -->
+      <div class="panel" id="panel-subscriptions">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Assinaturas</div>
+            <div class="card-sub">Visão geral de planos e pagamentos</div>
+          </div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card" data-icon="🆓">
+            <div class="stat-label">Free</div>
+            <div class="stat-value" id="sub-free">—</div>
+            <div class="stat-delta">usuários</div>
+          </div>
+          <div class="stat-card" data-icon="⚡">
+            <div class="stat-label">Trial</div>
+            <div class="stat-value amber" id="sub-trial">—</div>
+            <div class="stat-delta">em trial de 30 dias</div>
+          </div>
+          <div class="stat-card" data-icon="🌟">
+            <div class="stat-label">Pro</div>
+            <div class="stat-value green" id="sub-pro">—</div>
+            <div class="stat-delta">assinantes pagos</div>
+          </div>
+          <div class="stat-card" data-icon="🏢">
+            <div class="stat-label">Enterprise</div>
+            <div class="stat-value blue" id="sub-ent">—</div>
+            <div class="stat-delta">clientes enterprise</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:1rem">Usuários por Plano</div>
+          <div id="sub-table"></div>
+        </div>
+      </div>
+
+      <!-- ──── POSTS ──── -->
+      <div class="panel" id="panel-posts">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Posts & Artigos</div>
+            <div class="card-sub" id="posts-subtitle">Gerencie o conteúdo do News</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="post-filter-tag" onchange="filterPosts()" style="width:auto;height:36px;padding:0 12px;font-size:13px">
+              <option value="">Todas as tags</option>
+              <option value="DeFi">DeFi</option>
+              <option value="Cripto">Cripto</option>
+              <option value="Ações">Ações</option>
+              <option value="Economia">Economia</option>
+              <option value="Opções">Opções</option>
+            </select>
+            <select id="post-filter-status" onchange="filterPosts()" style="width:auto;height:36px;padding:0 12px;font-size:13px">
+              <option value="">Todos os status</option>
+              <option value="published">Publicados</option>
+              <option value="draft">Rascunhos</option>
+            </select>
+            <button class="btn btn-green" onclick="openPostModal()">+ Novo Post</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportPostsCSV()">📥 CSV</button>
+          </div>
+        </div>
+        <div id="posts-list">
+          <div class="loading"><div class="spinner"></div> Carregando posts...</div>
+        </div>
+      </div>
+
+      <!-- ──── NOTIFICATIONS ──── -->
+      <div class="panel" id="panel-notifications">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Notificações da Plataforma</div>
+            <div class="card-sub">Envie alertas e avisos para os usuários</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1.25rem">Criar Notificação</div>
+            <div class="form-group">
+              <label>Título</label>
+              <input class="field input" id="notif-title" type="text" placeholder="Ex: Nova feature disponível!" style="width:100%;height:38px;padding:0 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;font-family:var(--font-body)">
+            </div>
+            <div class="form-group">
+              <label>Mensagem</label>
+              <textarea id="notif-body" rows="3" placeholder="Descreva a notificação..."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo</label>
+                <select id="notif-type" onchange="updateNotifPreview()">
+                  <option value="info">ℹ️ Info</option>
+                  <option value="success">✅ Sucesso</option>
+                  <option value="warning">⚠️ Aviso</option>
+                  <option value="tip">💡 Dica</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Ícone (emoji)</label>
+                <input type="text" id="notif-icon" value="📢" style="width:100%;height:38px;padding:0 12px;font-size:16px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;font-family:var(--font-body)" oninput="updateNotifPreview()">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Link para módulo (opcional)</label>
+              <select id="notif-link">
+                <option value="">— Sem link —</option>
+                <option value="home">News</option>
+                <option value="positions">Pool de Liquidez</option>
+                <option value="wallet">Carteira</option>
+                <option value="finance">Finanças</option>
+                <option value="copytrading">Copy Trading</option>
+                <option value="options">Opções</option>
+                <option value="p2p">P2P</option>
+                <option value="settings">Configurações</option>
+              </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+              <label style="margin-bottom:0">Prioridade alta (aparece primeiro)</label>
+              <label class="toggle">
+                <input type="checkbox" id="notif-priority">
+                <div class="toggle-track"></div>
+              </label>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:1rem">
+              <button class="btn btn-green" style="flex:1;justify-content:center" onclick="publishNotification()">📤 Publicar Notificação</button>
+              <button class="btn btn-ghost" onclick="clearNotifForm()">Limpar</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-title" style="margin-bottom:1rem">Prévia</div>
+              <div id="notif-preview-container">
+                <div style="font-size:12px;color:var(--text3)">Preencha o formulário para ver a prévia.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:1rem">Notificações Publicadas</div>
+              <div id="notif-published-list">
+                <div class="loading" style="padding:1.5rem"><div class="spinner"></div> Carregando...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- ──── PUSH NOTIFICATIONS ──── -->
+      <div class="panel" id="panel-push">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">📲 Push Notifications</div>
+            <div class="card-sub">Envie notificações push para todos os usuários ou segmentos específicos</div>
+          </div>
+          <button class="btn btn-sm" onclick="loadPushPanel()">↻ Atualizar</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+          <!-- Composer -->
+          <div>
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-title" style="margin-bottom:1.25rem">✍️ Criar Push</div>
+              <div class="form-group">
+                <label>Título *</label>
+                <input type="text" id="push-title" placeholder="Ex: 🚀 Nova análise disponível!" maxlength="65"
+                  style="width:100%;height:38px;padding:0 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;font-family:var(--font-body)"
+                  oninput="updatePushPreview()">
+                <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:monospace" id="push-title-count">0/65</div>
+              </div>
+              <div class="form-group">
+                <label>Mensagem *</label>
+                <textarea id="push-body" rows="3" placeholder="Corpo da notificação..." maxlength="180"
+                  oninput="updatePushPreview()"></textarea>
+                <div style="font-size:10px;color:var(--text3);margin-top:3px;font-family:monospace" id="push-body-count">0/180</div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Ícone (emoji)</label>
+                  <input type="text" id="push-icon" value="🔔" maxlength="4"
+                    style="width:100%;height:38px;padding:0 12px;font-size:20px;text-align:center;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none"
+                    oninput="updatePushPreview()">
+                </div>
+                <div class="form-group">
+                  <label>Direcionar para módulo</label>
+                  <select id="push-module" oninput="updatePushPreview()">
+                    <option value="">— Nenhum (só abre app) —</option>
+                    <option value="home">📰 News</option>
+                    <option value="positions">🌊 Pools DeFi</option>
+                    <option value="wallet">💼 Carteira</option>
+                    <option value="finance">💵 Finanças</option>
+                    <option value="options">◎ Opções</option>
+                    <option value="copytrading">📡 Copy Trading</option>
+                    <option value="p2p">🔄 P2P Cripto</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Segmento de usuários</label>
+                <select id="push-segment">
+                  <option value="all">👥 Todos os usuários</option>
+                  <option value="pro">⭐ Apenas Pro</option>
+                  <option value="trial">⏱ Apenas Trial</option>
+                  <option value="free">🆓 Apenas Free</option>
+                </select>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+                <label style="margin-bottom:0">Interação obrigatória (não some sozinha)</label>
+                <label class="toggle">
+                  <input type="checkbox" id="push-persist">
+                  <div class="toggle-track"></div>
+                </label>
+              </div>
+            </div>
+            <button class="btn btn-green" style="width:100%;justify-content:center;height:44px;font-size:14px" onclick="sendPushNotification()">
+              📲 Enviar Push para Todos
+            </button>
+          </div>
+
+          <!-- Preview + Stats -->
+          <div>
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-title" style="margin-bottom:1rem;font-size:12px">📱 Prévia</div>
+              <div style="background:#1a1a2e;border-radius:16px;padding:1rem;margin-bottom:.75rem">
+                <div style="font-size:9px;color:#888;text-align:center;margin-bottom:.75rem;font-family:monospace">ANDROID / CHROME</div>
+                <div style="background:#2a2a3e;border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px">
+                  <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#4169e1,#39ff8a);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0" id="push-prev-icon">🔔</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:2px" id="push-prev-title">Título da notificação</div>
+                    <div style="font-size:11px;color:#aaa;line-height:1.4" id="push-prev-body">Corpo da mensagem aparece aqui...</div>
+                    <div style="font-size:10px;color:#666;margin-top:4px">ProfitFlow Labs · agora</div>
+                  </div>
+                </div>
+              </div>
+              <div id="push-prev-module-info" style="font-size:11px;color:var(--text3);text-align:center;font-family:monospace"></div>
+            </div>
+
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-title" style="margin-bottom:1rem;font-size:12px">📊 Alcance Estimado</div>
+              <div id="push-reach-stats">
+                <div class="loading" style="padding:1rem"><div class="spinner"></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:1rem;font-size:12px">📋 Histórico de Envios</div>
+              <div id="push-history">
+                <div class="loading" style="padding:1rem"><div class="spinner"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──── MÓDULOS ──── -->
+      <div class="panel" id="panel-modules">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Gerenciar Módulos</div>
+            <div class="card-sub">Ative ou desative módulos para todos os usuários da plataforma</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" onclick="setAllModules(true)">✅ Ativar todos</button>
+            <button class="btn btn-sm btn-danger" onclick="setAllModules(false)">⛔ Desativar todos</button>
+            <button class="btn btn-green btn-sm" onclick="saveModules()">💾 Salvar alterações</button>
+          </div>
+        </div>
+
+        <div class="info-box info-amber" style="margin-bottom:1rem">
+          ⚠️ Módulos desativados ficam <strong>invisíveis para todos os usuários</strong> imediatamente após salvar.
+          Módulos marcados como <strong>Core</strong> não podem ser desativados.
+        </div>
+
+        <div class="info-box info-blue" style="margin-bottom:1.25rem">
+          💡 Use isso para manutenção temporária, lançamento gradual de features ou controle de acesso global.
+          As configurações ficam salvas no Firestore em <code style="font-family:var(--font-mono);font-size:11px">platform/modules</code>.
+        </div>
+
+        <div id="modules-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px">
+          <div class="loading"><div class="spinner"></div> Carregando módulos...</div>
+        </div>
+
+        <div style="margin-top:1.25rem;display:flex;justify-content:flex-end">
+          <button class="btn btn-green" onclick="saveModules()" style="padding:10px 24px;font-size:14px">
+            💾 Salvar e publicar alterações
+          </button>
+        </div>
+      </div>
+
+      <!-- ──── SETTINGS ──── -->
+      <div class="panel" id="panel-settings">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div class="card-title" style="font-size:18px">Configurações da Plataforma</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:1.25rem">Gerenciar Admins</div>
+            <div class="info-box info-amber">⚠️ Adicionar administradores concede acesso total ao painel. Use com cautela.</div>
+            <div class="form-group">
+              <label>E-mail do novo admin</label>
+              <input type="email" id="new-admin-email" placeholder="email@profitflowlabs.io" style="width:100%;height:38px;padding:0 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;font-family:var(--font-body)">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="promoteAdmin()">Promover a Admin</button>
+            <hr class="divider">
+            <div class="card-title" style="margin-bottom:1rem;font-size:13px">Admins Ativos</div>
+            <div id="admins-list">
+              <div class="loading" style="padding:1rem"><div class="spinner"></div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-title" style="margin-bottom:1.25rem">Configurações Gerais</div>
+              <div class="form-group">
+                <label>Nome da Plataforma</label>
+                <input type="text" id="cfg-platform-name" value="ProfitFlow Labs" style="width:100%;height:38px;padding:0 12px;font-size:13px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text);outline:none;font-family:var(--font-body)">
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+                <label style="margin-bottom:0">Modo de manutenção</label>
+                <label class="toggle">
+                  <input type="checkbox" id="cfg-maintenance">
+                  <div class="toggle-track"></div>
+                </label>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+                <label style="margin-bottom:0">Novos registros habilitados</label>
+                <label class="toggle">
+                  <input type="checkbox" id="cfg-registrations" checked>
+                  <div class="toggle-track"></div>
+                </label>
+              </div>
+              <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+                <label style="margin-bottom:0">Trial de 30 dias ativo</label>
+                <label class="toggle">
+                  <input type="checkbox" id="cfg-trial" checked>
+                  <div class="toggle-track"></div>
+                </label>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveSettings()">Salvar configurações</button>
+            </div>
+
+            <div class="card">
+              <div class="card-title" style="margin-bottom:1rem">Firebase Info</div>
+              <div style="font-size:12px;color:var(--text2);font-family:var(--font-mono);line-height:2">
+                <div>Project: <span style="color:var(--green)">cashflow-ae591</span></div>
+                <div>Auth: <span style="color:var(--green)">Firebase Auth ✓</span></div>
+                <div>Database: <span style="color:var(--green)">Firestore ✓</span></div>
+                <div>Storage: <span style="color:var(--blue)">Firebase Storage</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──── LOGS ──── -->
+      <div class="panel" id="panel-logs">
+        <div class="card-header" style="margin-bottom:1rem">
+          <div>
+            <div class="card-title" style="font-size:18px">Logs de Acesso Admin</div>
+            <div class="card-sub">Ações realizadas neste painel</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="clearLogs()">🗑 Limpar logs</button>
+        </div>
+        <div class="card" style="padding:0">
+          <div id="logs-container" style="max-height:600px;overflow-y:auto">
+            <div class="loading"><div class="spinner"></div> Carregando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                                    -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+
+  <!-- Admin JS — ordem importa -->
+  <script src="/js/admin-core.js"></script>
+  <script src="/js/admin-dashboard.js"></script>
+  <script src="/js/admin-users.js"></script>
+  <script src="/js/admin-posts.js"></script>
+  <script src="/js/admin-analytics.js"></script>
+  <script src="/js/admin-settings.js"></script>
+  <script src="/js/admin-modules.js"></script>
+
+</body>
+</html>

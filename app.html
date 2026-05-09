@@ -1,0 +1,60 @@
+<!--
+  ╔══════════════════════════════════════════════════════════════════════╗
+  ║              ProfitFlow Labs — Plataforma DeFi & Finanças             ║
+  ║                   Copyright © 2025 ProfitFlow Labs                   ║
+  ║  BUILD ID : CFL-2025-${BUILD_HASH}                                  ║
+  ╚══════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#080c12">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ProfitFlow Labs">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProfitFlow Labs — Plataforma</title>
+
+  <!-- Fontes Aurora -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="/css/styles.css?v=4">
+
+  <!-- Bibliotecas externas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+  <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+  <div class="app" id="root"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ESTRATÉGIA DE CARREGAMENTO
+       • Críticos (defer): carregam em paralelo, executam em ordem
+       • Lazy: carregam em background após o app inicializar
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- Críticos — defer: download paralelo, execução em ordem -->
+  <script defer src="/js/config.js?v=4"></script>
+  <script defer src="/js/core.js?v=4"></script>
+  <script defer src="/js/pwa.js?v=4"></script>
+  <script defer src="/js/auth.js?v=4"></script>
+  <script defer src="/js/shell.js?v=4"></script>
+  <script defer src="/js/landing.js?v=4"></script>
+  <script defer src="/js/dashboard.js?v=4"></script>
+  <script defer src="/js/pools.js?v=4"></script>
+  <script defer src="/js/pool_helpers.js?v=4"></script>
+
+  <!-- Boot: roda após todos os defer acima executarem -->
+  <script defer src="/js/boot.js?v=4"></script>
+</body>
+</html>
